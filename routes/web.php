@@ -39,3 +39,4 @@ Route::get('/testorm','PruebasController@textOrm');
 //Rutas controlador de usuario
 Route::post('api/register', 'UserController@register');
 Route::post('api/login', 'UserController@login');
+Route::post('api/user/update', 'UserController@update');

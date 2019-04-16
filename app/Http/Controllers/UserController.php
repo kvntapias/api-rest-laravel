@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\User;
+use App\Helpers\JwtAuth;
 
 class UserController extends Controller
 {
@@ -39,7 +40,7 @@ class UserController extends Controller
                 );
             }else{
                 //cifrar password
-                $pwd = password_hash($params->password, PASSWORD_BCRYPT, ['cost' => 4]);
+                $pwd = hash('SHA256', $params->password);
                 //Setear valores al objeto usuario
                 $user = new User();
                 $user->name = $params_array['name'];
@@ -77,6 +78,48 @@ class UserController extends Controller
     }
 
     public function login(Request $req){
-        return "Login de usuario";
+        $jwtAuth = new JwtAuth();
+        
+        //Recibir datos post
+        $json = $req->input('json', null);
+        $params = json_decode($json);
+        $params_array = json_decode($json, true);
+        //Validar datos
+        $validate = \Validator::make($params_array,[
+            'email'     => "required|email",
+            'password' => "required",
+        ]);
+        //Si falla la validación
+        if ($validate->fails()) {
+            $signup = array(
+                'status' => "error",
+                'code' => "404",
+                'message' => "Error login incorrecto",
+                'errors' => $validate->errors()
+            );
+        }else{
+            //Cifrar pass
+            $pwd = hash('SHA256', $params->password);
+            //retornar token  o datos
+            $signup = $jwtAuth->signup($params->email, $pwd);
+            if (isset($params->getToken)) {
+                $signup = $jwtAuth->signup($params->email, $pwd, true);
+            }
+        }
+        return response()->json($signup, 200);
+    }
+
+    //actualizar datos del usuario
+    public function update(Request $req){
+        $token = $req->header('Authorization');
+        $jwtAuth = new JwtAuth();
+        $checkToken = $jwtAuth->checkToken($token);
+
+        if ($checkToken) {
+            echo "Login correcto";
+        }else{
+            echo "Login incorrecto";
+        }
+        die();
     }
 }
